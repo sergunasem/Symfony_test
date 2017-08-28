@@ -1,0 +1,12 @@
+{% extends 'basetemplate.html.twig' %}
+
+{% block title%} Homepage {% endblock %}
+{% block content %} 
+
+<h1>Catalog of products</h1>
+<ul>
+{% for cat in category %}
+	<li><a href="{{path('categorylist', {'slug': cat.id })}}">{{cat.namecat}}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}

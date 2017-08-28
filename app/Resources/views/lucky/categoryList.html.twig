@@ -1,0 +1,12 @@
+{% extends 'basetemplate.html.twig' %}
+{% block title %}{{category.namecat}} list{% endblock %}
+
+{% block content %}
+<h2>{{category.namecat}}</h2>
+	<ul>
+{% for prod in products %}
+	<li><a href="{{path('productabout', {'slug': prod.id })}}">{{prod.productname}}</a></li>
+{% endfor %}
+</ul>
+	 
+{% endblock %}
