@@ -1,6 +1,7 @@
 <?php
 
 namespace AppBundle\Entity;
+use Doctrine\Common\Collections\ArrayCollection;
 
 use Doctrine\ORM\Mapping as ORM;
 
@@ -29,43 +30,108 @@ class Products {
 	private $description;
 
 	/**
-	 * @ORM\ManyToOne(targetEntity = "Category", inversedBy="products")
-	 * @ORM\JoinColumn(name="category_id", referencedColumnName="id")
+	 * @ORM\ManyToMany(targetEntity = "Category", inversedBy="products")
+	 * @ORM\JoinTable(name="products_category")
 	 */
 	private $category;
 
-	public function getId() {
-		return $this->id;
-	}
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $this->category = new \Doctrine\Common\Collections\ArrayCollection();
+    }
 
-	public function setProductname($prod_name) {
-		$this->product_name = $prod_name;
-		return $this;
-	}
+    /**
+     * Get id
+     *
+     * @return integer
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
 
-	public function getProductname() {
-		return $this->product_name;
-	}
+    /**
+     * Set productName
+     *
+     * @param string $productName
+     *
+     * @return Products
+     */
+    public function setProductName($productName)
+    {
+        $this->product_name = $productName;
 
-	public function setDescription($description) {
-		$this->description = $description;
-		return $this;
-	}
+        return $this;
+    }
 
-	public function getDescription() {
-		return $this->description;
-	}
+    /**
+     * Get productName
+     *
+     * @return string
+     */
+    public function getProductName()
+    {
+        return $this->product_name;
+    }
 
-	public function setCategory($category) {
-		$this->category = $category;
-		return $this;
-	}
+    /**
+     * Set description
+     *
+     * @param string $description
+     *
+     * @return Products
+     */
+    public function setDescription($description)
+    {
+        $this->description = $description;
 
-	public function getCategory() {
-		return $this->category;
-	}
+        return $this;
+    }
 
+    /**
+     * Get description
+     *
+     * @return string
+     */
+    public function getDescription()
+    {
+        return $this->description;
+    }
+
+    /**
+     * Add category
+     *
+     * @param \AppBundle\Entity\Category $category
+     *
+     * @return Products
+     */
+    public function addCategory(\AppBundle\Entity\Category $category)
+    {
+        $this->category[] = $category;
+
+        return $this;
+    }
+
+    /**
+     * Remove category
+     *
+     * @param \AppBundle\Entity\Category $category
+     */
+    public function removeCategory(\AppBundle\Entity\Category $category)
+    {
+        $this->category->removeElement($category);
+    }
+
+    /**
+     * Get category
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getCategory()
+    {
+        return $this->category;
+    }
 }
-
-
-?>

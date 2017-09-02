@@ -48,6 +48,7 @@ class LuckyController extends Controller{
 	*
 	*/
 	public function categoryEditorAction(Request $request) {
+		//add new category
 
 		$em = $this->getDoctrine()->getManager();
 		$category = new Category;
@@ -74,14 +75,20 @@ class LuckyController extends Controller{
 	*
 	*/
 	public function productEditorAction(Request $request) {
+		//add new product
 
 		$em = $this->getDoctrine()->getManager();
 		$repos = $this->getDoctrine()->getRepository(Category::class);
 		$category = $repos->findAll();
 
+			$formCat = [];
+			foreach($category as $cat) {
+				$formCat[$cat->getNameCat()] = $cat;
+			}
+
 		$product = new Products;
 
-		$form = $this->createFormBuilder($product)->add('product_name', TextType::class)->add('description', TextareaType::class)->add('save', SubmitType::class, ['label' => 'save'])->GetForm();
+		$form = $this->createFormBuilder($product)/*->add('category', ChoiceType::class, array('choices' => $formCat, 'multiple' => false))*/->add('product_name', TextType::class)->add('description', TextareaType::class)->add('save', SubmitType::class, ['label' => 'save'])->GetForm();
 
 
 		 $form->handleRequest($request);
@@ -90,9 +97,7 @@ class LuckyController extends Controller{
 
 		 		$catId = $_POST['category'];
 		 		$category = $repos->find($catId);
-		 		$product->setCategory($category);
-
-		 		
+		 		$product->addCategory($category);//!!!!!!!!!!!!!!!!!!!!!
 		 		$em->persist($product);
 		 		$em->flush();
 		 	return $this->redirectToRoute("producteditor");
@@ -109,6 +114,7 @@ class LuckyController extends Controller{
  * @Route("/categorylist/{slug}", name="categorylist")
  */
 public function categorylistAction($slug) {
+	//render list of products in selected category
 
 	$em = $this-> getDoctrine()->getManager();
 	$repos = $this->getDoctrine()->getRepository(Category::class);	
@@ -125,6 +131,7 @@ public function categorylistAction($slug) {
  * @Route("/productabout/{slug}", name="productabout")
  */
 public function productAboutAction($slug) {
+	//info about product
 	
 	$repos = $this->getDoctrine()->getRepository(Products::class);
 	$product = $repos->find($slug);
@@ -134,5 +141,44 @@ public function productAboutAction($slug) {
 
 }
 
+
+
+/** 
+ * @Route("/prodedit/{slug}", name = "prodedit")
+ */
+
+	public function productEditAction($slug, Request $request) {
+		//edit exists product
+	
+		$em = $this->getDoctrine()->getManager();
+			$repos = $this->getDoctrine()->getRepository(Category::class);
+			$category = $repos->findAll();
+
+				$formCat = [];
+				foreach($category as $cat) {
+					$formCat[$cat->getNameCat()] = $cat;
+				}
+
+			$product = $this->getDoctrine()->getRepository(Products::class)->find($slug);
+
+
+
+			$form = $this->createFormBuilder($product)/*->add('category', ChoiceType::class, array('choices' => $formCat, 'multiple' => false))*/->add('product_name', TextType::class)->add('description', TextareaType::class)->add('save', SubmitType::class, ['label' => 'update'])->GetForm();
+
+
+			 $form->handleRequest($request);
+
+			 	if($form->isSubmitted()) {
+
+			 		$catId = $_POST['category'];
+			 		$category = $repos->find($catId);
+			 		$product->addCategory($category);
+			 		$em->flush();
+			 	return $this->redirectToRoute("producteditor");
+			 	}
+
+	    	
+	    	return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category));
+	}
 
 }

@@ -2,8 +2,10 @@
 {% block title %}{{product.productname}} list{% endblock %}
 
 {% block content %}
-<h2>{{category.namecat}}</h2>
-<h3>{{product.productname}}</h3>
-<p>{{product.description}}</p>
-	 
+	{% for cat in category %}
+		<h2>{{cat.namecat}}</h2>
+	{% endfor %}
+	<h3>{{product.productname}}</h3>
+	<p>{{product.description}}</p>
+	<a href="{{path('prodedit', {'slug': product.id })}}">Edit product</a>
 {% endblock %}
