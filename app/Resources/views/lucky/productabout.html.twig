@@ -3,9 +3,11 @@
 
 {% block content %}
 	{% for cat in category %}
-		<h2>{{cat.namecat}}</h2>
+		<h2><a href="{{path('categorylist', {'slug': cat.id})}}">{{cat.namecat}}</a></h2>
 	{% endfor %}
 	<h3>{{product.productname}}</h3>
 	<p>{{product.description}}</p>
-	<a href="{{path('prodedit', {'slug': product.id })}}">Edit product</a>
+	{{ form_start(form) }}
+	{{ form_widget(form) }}
+	{{ form_end(form) }}
 {% endblock %}

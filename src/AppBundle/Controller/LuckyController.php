@@ -14,7 +14,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 
 
 class LuckyController extends Controller{
@@ -53,18 +53,18 @@ class LuckyController extends Controller{
 		$em = $this->getDoctrine()->getManager();
 		$category = new Category;
 
-		$form = $this->createFormBuilder($category)->add('name_cat', TextType::class)->add('save', SubmitType::class, ['label' => 'save'])->GetForm();
+		$form = $this->createFormBuilder($category)
+					 ->add('name_cat', TextType::class)
+					 ->add('save', SubmitType::class, ['label' => 'save', 'attr' => ['class' => 'btn btn-primary']])
+					 ->GetForm();
 
 		$form->handleRequest($request);
 
-			if($form->isSubmitted()) {
-			
-				$em->persist($category);
-				$em->flush();
-
-				return $this->redirectToRoute("home");
-			}
-		
+		if($form->isSubmitted()) {
+			$em->persist($category);
+			$em->flush();
+			return $this->redirectToRoute("home");
+		}		
 
 		 return $this->render('lucky/new_category.html.twig', array('form' => $form->createView(),));
 	}
@@ -88,24 +88,21 @@ class LuckyController extends Controller{
 
 		$product = new Products;
 
-		$form = $this->createFormBuilder($product)/*->add('category', ChoiceType::class, array('choices' => $formCat, 'multiple' => false))*/->add('product_name', TextType::class)->add('description', TextareaType::class)->add('save', SubmitType::class, ['label' => 'save'])->GetForm();
-
+		$form = $this->createFormBuilder($product)
+					 ->add('category', EntityType::class, array('class' => 'AppBundle:Category', 'choice_label' => 'name_cat', 'multiple'=> true))
+					 ->add('product_name', TextType::class)
+					 ->add('description', TextareaType::class)
+					 ->add('save', SubmitType::class, ['label' => 'save', 'attr' => ['class' => 'btn btn-primary']])
+					 ->GetForm();
 
 		 $form->handleRequest($request);
-
 		 	if($form->isSubmitted()) {
-
-		 		$catId = $_POST['category'];
-		 		$category = $repos->find($catId);
-		 		$product->addCategory($category);//!!!!!!!!!!!!!!!!!!!!!
 		 		$em->persist($product);
 		 		$em->flush();
 		 	return $this->redirectToRoute("producteditor");
 		 	}
-
     	
-    	return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category));
-
+    	return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category, 'label' => 'New product'));
 
 	}
 
@@ -121,7 +118,6 @@ public function categorylistAction($slug) {
 	$category = $repos->find($slug);
 
 	$products = $category->getProducts();
-	
 
 	return $this->render('lucky/categoryList.html.twig', ['category' => $category, 'products' => $products]);
 
@@ -137,48 +133,52 @@ public function productAboutAction($slug) {
 	$product = $repos->find($slug);
 	$category = $product->getCategory();
 
-	return $this->render('lucky/productabout.html.twig', ['product' => $product, 'category' => $category]);
+	$form = $this->createFormBuilder($product)
+				 ->setAction($this->generateUrl('prodedit', ['id' => $slug]))
+				 ->setMethod('get')
+				 ->add('updateProduct', SubmitType::class, ['label' => 'Update Product', 'attr' => ['class' => 'btn btn-success']])
+				 ->add('removeProduct', SubmitType::class, ['label' => 'Remove Product', 'attr' => ['class' => 'btn btn-danger']])
+				 ->GetForm();
+	
+	return $this->render('lucky/productabout.html.twig', ['product' => $product, 'category' => $category, 'form' => $form->createView()]);
 
 }
 
 
 
 /** 
- * @Route("/prodedit/{slug}", name = "prodedit")
+ * @Route("/prodedit/{id}", name = "prodedit")
  */
 
-	public function productEditAction($slug, Request $request) {
+	public function productEditAction(Request $request, $id) {
 		//edit exists product
-	
+					
 		$em = $this->getDoctrine()->getManager();
-			$repos = $this->getDoctrine()->getRepository(Category::class);
-			$category = $repos->findAll();
+		$repos = $this->getDoctrine()->getRepository(Category::class);
+		$category = $repos->findAll();
+		$product = $this->getDoctrine()->getRepository(Products::class)->find($id);
+				
+		$form = $this->createFormBuilder($product)
+					 ->setMethod('post')
+					 ->add('category', EntityType::class, array('class' => 'AppBundle:Category', 'choice_label' => 'name_cat', 'multiple'=> true))
+					 ->add('product_name', TextType::class)
+					 ->add('description', TextareaType::class)
+					 ->add('update', SubmitType::class, ['label' => 'update', 'attr' => ['class' => 'btn btn-success']])
+				     ->GetForm();	
 
-				$formCat = [];
-				foreach($category as $cat) {
-					$formCat[$cat->getNameCat()] = $cat;
-				}
-
-			$product = $this->getDoctrine()->getRepository(Products::class)->find($slug);
-
-
-
-			$form = $this->createFormBuilder($product)/*->add('category', ChoiceType::class, array('choices' => $formCat, 'multiple' => false))*/->add('product_name', TextType::class)->add('description', TextareaType::class)->add('save', SubmitType::class, ['label' => 'update'])->GetForm();
-
-
-			 $form->handleRequest($request);
-
-			 	if($form->isSubmitted()) {
-
-			 		$catId = $_POST['category'];
-			 		$category = $repos->find($catId);
-			 		$product->addCategory($category);
-			 		$em->flush();
-			 	return $this->redirectToRoute("producteditor");
-			 	}
-
-	    	
-	    	return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category));
+		$form->handleRequest($request);
+		if($form->isSubmitted() && $form->isValid()) {
+			$em->flush();
+			return $this->redirectToRoute('productabout', ['slug' => $id]);
+		}
+		
+		return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category, 'product' => $product, 'label' => 'Edit product'));
+		
+		if (isset($request->request->get('form')['removeProduct'])) {
+			$em->remove($product);
+			$em->flush();
+			return $this->redirectToRoute('home');					
+		}
 	}
 
 }

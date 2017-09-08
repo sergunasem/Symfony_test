@@ -1,16 +1,7 @@
 {% extends 'basetemplate.html.twig' %}
-{% block title %}New Product{% endblock %}
-
+{% block title %}{{label}}{% endblock %}
 {% block content %}
 	{{ form_start(form) }}
-	<select name="category" id="">
-		{% for cat in category %}
-			<option value="{{cat.id}}">{{cat.namecat}}</option>
-		{% endfor %}
-	</select> 
 	{{ form_widget(form) }}
-	{{ form_end(form) }}
-
-
-	 
+	{{ form_end(form) }} 
 {% endblock %}
