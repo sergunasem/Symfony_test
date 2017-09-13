@@ -5,6 +5,7 @@
 	{% for cat in category %}
 		<h2><a href="{{path('categorylist', {'slug': cat.id})}}">{{cat.namecat}}</a></h2>
 	{% endfor %}
+	<img src="/Img/{{product.productImage}}" width="200px" alt="">
 	<h3>{{product.productname}}</h3>
 	<p>{{product.description}}</p>
 	{{ form_start(form) }}

@@ -37,6 +37,19 @@ class Products {
 	 */
 	private $category;
 
+
+	/**
+	 * @ORM\Column(type="string")
+	 * @Assert\Image(
+	 *	   minWidth = 200,
+     *     maxWidth = 1000,
+     *     minHeight = 200,
+     *     maxHeight = 1000
+     * )
+	 */
+	private $productImage;
+
+
     /**
      * Constructor
      */
@@ -135,5 +148,29 @@ class Products {
     public function getCategory()
     {
         return $this->category;
+    }
+
+    /**
+     * Set productImage
+     *
+     * @param string $productImage
+     *
+     * @return Products
+     */
+    public function setProductImage($productImage)
+    {
+        $this->productImage = $productImage;
+
+        return $this;
+    }
+
+    /**
+     * Get productImage
+     *
+     * @return string
+     */
+    public function getProductImage()
+    {
+        return $this->productImage;
     }
 }

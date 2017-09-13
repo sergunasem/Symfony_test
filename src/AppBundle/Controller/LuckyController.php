@@ -15,6 +15,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 
 
 class LuckyController extends Controller{
@@ -44,67 +45,86 @@ class LuckyController extends Controller{
 
 	/**
 	*
-	*@Route("/editcategory", name="categoryeditor")
+	*@Route("/editcategory/{id}", name="categoryeditor")
 	*
 	*/
-	public function categoryEditorAction(Request $request) {
+	public function categoryEditorAction(Request $request, $id=null) {
 		//add new category
 
 		$em = $this->getDoctrine()->getManager();
-		$category = new Category;
+
+		if($id !== null) {
+			$category = $this->getDoctrine()->getRepository(Category::class)->find($id);
+		} else { 
+			$category = new Category;
+		}
+
+		$submitLabel = ($id === null) ? 'save' : 'update';
+		$title = ($id === null) ? 'New Category' : 'Update Category';
 
 		$form = $this->createFormBuilder($category)
+					 ->setMethod('post')
 					 ->add('name_cat', TextType::class)
-					 ->add('save', SubmitType::class, ['label' => 'save', 'attr' => ['class' => 'btn btn-primary']])
+					 ->add('save', SubmitType::class, ['label' => $submitLabel, 'attr' => ['class' => 'btn btn-primary']])
 					 ->GetForm();
 
 		$form->handleRequest($request);
 
 		if($form->isSubmitted()) {
-			$em->persist($category);
+			if($id === null) {
+				$em->persist($category);
+			}
 			$em->flush();
 			return $this->redirectToRoute("home");
 		}		
 
-		 return $this->render('lucky/new_category.html.twig', array('form' => $form->createView(),));
+		if (isset($request->query->get('form')['removeCategory'])) {
+			$em->remove($category);
+			$em->flush();
+			return $this->redirectToRoute('home');					
+		}
+
+		 return $this->render('lucky/new_category.html.twig', array('form' => $form->createView(), 'title' => $title));
 	}
 
-	/**
-	*
-	*@Route("/editproduct", name="producteditor")
-	*
-	*/
-	public function productEditorAction(Request $request) {
-		//add new product
 
-		$em = $this->getDoctrine()->getManager();
-		$repos = $this->getDoctrine()->getRepository(Category::class);
-		$category = $repos->findAll();
 
-			$formCat = [];
-			foreach($category as $cat) {
-				$formCat[$cat->getNameCat()] = $cat;
-			}
+	// /**
+	// *
+	// *@Route("/editproduct", name="producteditor")
+	// *
+	// */
+	// public function productEditorAction(Request $request) {
+	// 	//add new product
 
-		$product = new Products;
+	// 	$em = $this->getDoctrine()->getManager();
+	// 	$repos = $this->getDoctrine()->getRepository(Category::class);
+	// 	$category = $repos->findAll();
 
-		$form = $this->createFormBuilder($product)
-					 ->add('category', EntityType::class, array('class' => 'AppBundle:Category', 'choice_label' => 'name_cat', 'multiple'=> true))
-					 ->add('product_name', TextType::class)
-					 ->add('description', TextareaType::class)
-					 ->add('save', SubmitType::class, ['label' => 'save', 'attr' => ['class' => 'btn btn-primary']])
-					 ->GetForm();
+	// 		$formCat = [];
+	// 		foreach($category as $cat) {
+	// 			$formCat[$cat->getNameCat()] = $cat;
+	// 		}
 
-		 $form->handleRequest($request);
-		 	if($form->isSubmitted()) {
-		 		$em->persist($product);
-		 		$em->flush();
-		 	return $this->redirectToRoute("producteditor");
-		 	}
+	// 	$product = new Products;
+
+	// 	$form = $this->createFormBuilder($product)
+	// 				 ->add('category', EntityType::class, array('class' => 'AppBundle:Category', 'choice_label' => 'name_cat', 'multiple'=> true))
+	// 				 ->add('product_name', TextType::class)
+	// 				 ->add('description', TextareaType::class)
+	// 				 ->add('save', SubmitType::class, ['label' => 'save', 'attr' => ['class' => 'btn btn-primary']])
+	// 				 ->GetForm();
+
+	// 	 $form->handleRequest($request);
+	// 	 	if($form->isSubmitted()) {
+	// 	 		$em->persist($product);
+	// 	 		$em->flush();
+	// 	 	return $this->redirectToRoute("producteditor");
+	// 	 	}
     	
-    	return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category, 'label' => 'New product'));
+ //    	return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category, 'label' => 'New product'));
 
-	}
+	// }
 
 
 /**
@@ -119,7 +139,14 @@ public function categorylistAction($slug) {
 
 	$products = $category->getProducts();
 
-	return $this->render('lucky/categoryList.html.twig', ['category' => $category, 'products' => $products]);
+	$form = $this->createFormBuilder($category)
+				 ->setAction($this->generateUrl('categoryeditor', ['id' => $slug]))
+				 ->setmethod('get')
+				 ->add('updateCategory', SubmitType::class, ['label' => 'Update Category', 'attr' => ['class' =>'btn btn-success']])
+				 ->add('removeCategory', SubmitType::class, ['label' => 'Remove Category', 'attr' => ['class' =>'btn btn-danger']])
+				 ->GetForm();
+
+	return $this->render('lucky/categoryList.html.twig', ['category' => $category, 'products' => $products, 'form' => $form->createView()]);
 
 }
 
@@ -150,35 +177,53 @@ public function productAboutAction($slug) {
  * @Route("/prodedit/{id}", name = "prodedit")
  */
 
-	public function productEditAction(Request $request, $id) {
+	public function productEditAction(Request $request, $id=null) {
 		//edit exists product
 					
 		$em = $this->getDoctrine()->getManager();
 		$repos = $this->getDoctrine()->getRepository(Category::class);
 		$category = $repos->findAll();
-		$product = $this->getDoctrine()->getRepository(Products::class)->find($id);
-				
+		if($id !== null){
+			$product = $this->getDoctrine()->getRepository(Products::class)->find($id);
+		} else {
+			$product = new Products;
+		}
+
+		$submitLabel = ($id === null) ? 'save' : 'update';
+						
 		$form = $this->createFormBuilder($product)
 					 ->setMethod('post')
 					 ->add('category', EntityType::class, array('class' => 'AppBundle:Category', 'choice_label' => 'name_cat', 'multiple'=> true))
 					 ->add('product_name', TextType::class)
 					 ->add('description', TextareaType::class)
-					 ->add('update', SubmitType::class, ['label' => 'update', 'attr' => ['class' => 'btn btn-success']])
+					 ->add('productImage', FileType::class, ['data_class' => null])
+					 ->add('save', SubmitType::class, ['label' => $submitLabel, 'attr' => ['class' => 'btn btn-success']])
 				     ->GetForm();	
 
 		$form->handleRequest($request);
 		if($form->isSubmitted() && $form->isValid()) {
+			$file = $product->getProductImage();
+			$fileName = $product->getProductName() . '.' . $file->guessExtension();
+			//$fileName = md5(uniqid()) . '.' . $file->guessExtension();
+			$file->move($this->getParameter('img_dir'), $fileName);
+			$product->setProductImage($fileName);
+			if($id === null) {
+				$em->persist($product);
+			}
 			$em->flush();
+			$id = $product->getId();
 			return $this->redirectToRoute('productabout', ['slug' => $id]);
 		}
-		
-		return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category, 'product' => $product, 'label' => 'Edit product'));
-		
-		if (isset($request->request->get('form')['removeProduct'])) {
+
+		if (isset($request->query->get('form')['removeProduct'])) {
 			$em->remove($product);
 			$em->flush();
 			return $this->redirectToRoute('home');					
 		}
+		
+		return $this->render('lucky/new_product.html.twig', array('form' => $form->createView(), 'category' => $category, 'product' => $product, 'label' => 'Edit product'));
+		
+		
 	}
 
 }

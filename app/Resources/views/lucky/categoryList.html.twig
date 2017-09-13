@@ -3,6 +3,11 @@
 
 {% block content %}
 <h2>{{category.namecat}}</h2>
+	
+{{ form_start(form) }}
+{{ form_widget(form) }}
+{{ form_end(form) }}
+	
 	<ul>
 {% for prod in products %}
 	<li><a href="{{path('productabout', {'slug': prod.id })}}">{{prod.productname}}</a></li>
